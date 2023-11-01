@@ -75,16 +75,16 @@ services:
                 - postgres
                 - pgadmin
           environment:
-                DB_URI: postgresql://${PG_USERNAME}:${PG_PASSWORD}@postgresql:5432/${PG_DB_NAME}
+                DB_URI: postgresql://${PG_USERNAME}:${PG_PASSWORD}@postgres:5432/${PG_DB_NAME}
                 ARTIFACT_STORE: /tmp/artifact
           volumes:
-                - mlflow-data:/tmp/artifact
+                - mlflow-storage:/tmp/artifact
           networks:
                 - postgres
 volumes:
     mlflow-data:
     pgadmin-data:
-    mlflow-data:
+    mlflow-storage:
 networks:
       postgres:
             driver: bridge

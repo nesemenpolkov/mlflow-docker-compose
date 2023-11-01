@@ -22,6 +22,7 @@ RUN pip install --upgrade pip && \
 COPY requirements.txt /tmp
 
 RUN pip install -r /tmp/requirements.txt
+RUN pip install --upgrade SQLAlchemy==1.4.46
 
 COPY ./start.sh ./start.sh
 

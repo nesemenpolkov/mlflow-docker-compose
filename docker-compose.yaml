@@ -39,7 +39,7 @@ services:
                           cpus: "1"
                           memory: 4G
         networks:
-              - postgres
+              - postgresnet
     pgadmin:
           container_name: pgadmin_container
           image: dpage/pgadmin4:7.2
@@ -60,7 +60,7 @@ services:
                             cpus: "0.5"
                             memory: 1G
           networks:
-                - postgres
+                - postgresnet
     mlflow:
           build: ./mlflow
           container_name: mlflow_container
@@ -71,6 +71,8 @@ services:
           ports:
                 - "8080:80"
                 - "4040:443"
+          networks:
+                - postgresnet
           depends_on:
                 - postgres
                 - pgadmin
@@ -79,12 +81,10 @@ services:
                 ARTIFACT_STORE: /tmp/artifact
           volumes:
                 - mlflow-storage:/tmp/artifact
-          networks:
-                - postgres
 volumes:
     mlflow-data:
     pgadmin-data:
     mlflow-storage:
 networks:
-      postgres:
+      postgresnet:
             driver: bridge

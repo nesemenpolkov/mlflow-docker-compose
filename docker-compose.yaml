@@ -1,0 +1,90 @@
+version: "3.7"
+
+services:
+    postgres:
+        container_name: pg_container
+        image: postgres:14.8-alpine3.18
+        command:
+              - "postgres"
+              - "-c"
+              - "max_connections=50"
+              - "-c"
+              - "shared_buffers=1GB"
+              - "-c"
+              - "effective_cache_size=2GB"
+              - "-c"
+              - "pg_stat_statements.max=10000"
+              - "-c"
+              - "pg_stat_statements.track=all"
+        environment:
+              POSTGRES_DB: "${PG_DB_NAME}"
+              POSTGRES_USER: "${PG_USERNAME}"
+              POSTGRES_PASSWORD: "${PG_PASSWORD}"
+              PGDATA: "${PG_DATA}"
+        ports:
+              - "5432:5432"
+        volumes:
+              - ./entrypoint.d:/docker-entrypoint-initdb.d
+              - mlflow-data:/var/lib/postgresql/data
+        healthcheck:
+              test: ["CMD-SHELL", "pg_isready -U mladmin -d mlflowdb"]
+              interval: 10s
+              timeout: 5s
+              retries: 5
+              start_period: 10s
+        restart: unless-stopped
+        deploy:
+              resources:
+                    limits:
+                          cpus: "1"
+                          memory: 4G
+        networks:
+              - postgres
+    pgadmin:
+          container_name: pgadmin_container
+          image: dpage/pgadmin4:7.2
+          environment:
+                PGADMIN_DEFAULT_EMAIL: "${PG_ADMIN_EMAIL}"
+                PGADMIN_DEFAULT_PASSWORD: "${PG_ADMIN_PASSWORD}"
+                PGADMIN_DEFAULT_SERVER_MODE: "${PG_ADMIN_MODE}"
+          volumes:
+                - pgadmin-data:/var/lib/pgadmin
+          depends_on:
+                - postgres
+          ports:
+                - "5050:80"
+          restart: "unless-stopped"
+          deploy:
+                resources:
+                      limits:
+                            cpus: "0.5"
+                            memory: 1G
+          networks:
+                - postgres
+    mlflow:
+          build: ./mlflow
+          container_name: mlflow_container
+          expose:
+                - 80
+                - 443
+          restart: always
+          ports:
+                - "8080:80"
+                - "4040:443"
+          depends_on:
+                - postgres
+                - pgadmin
+          environment:
+                DB_URI: postgresql://${PG_USERNAME}:${PG_PASSWORD}@postgresql:5432/${PG_DB_NAME}
+                ARTIFACT_STORE: /tmp/artifact
+          volumes:
+                - mlflow-data:/tmp/artifact
+          networks:
+                - postgres
+volumes:
+    mlflow-data:
+    pgadmin-data:
+    mlflow-data:
+networks:
+      postgres:
+            driver: bridge
